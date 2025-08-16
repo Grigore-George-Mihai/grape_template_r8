@@ -1,10 +1,18 @@
+require "sidekiq/web"
+require "sidekiq-scheduler/web"
+
+Sidekiq::Web.use Rack::Auth::Basic do |username, password|
+  username == ENV["SIDEKIQ_USERNAME"] && password == ENV["SIDEKIQ_PASSWORD"]
+end
+
 Rails.application.routes.draw do
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  mount ApiRoot => "/"
+  mount GrapeSwaggerRails::Engine => "/swagger" if Rails.env.development?
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
-  get "up" => "rails/health#show", as: :rails_health_check
+  if Rails.env.development? || Rails.env.production?
+    Sidekiq::Web.use ActionDispatch::Cookies
+    Sidekiq::Web.use ActionDispatch::Session::CookieStore, key: ENV.fetch("SIDEKIQ_SESSION_KEY", nil)
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+    mount Sidekiq::Web => "/sidekiq"
+  end
 end
