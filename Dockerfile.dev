@@ -1,0 +1,40 @@
+# syntax = docker/dockerfile:1
+ARG RUBY_VERSION=3.4.4
+FROM docker.io/library/ruby:$RUBY_VERSION-slim
+
+# Set the working directory
+WORKDIR /rails
+
+# Install dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      build-essential git curl \
+      libvips libpq-dev libsqlite3-dev \
+      libgmp-dev libyaml-dev libyaml-0-2 pkg-config \
+      postgresql-client \
+      tzdata ca-certificates shared-mime-info && \
+    rm -rf /var/lib/apt/lists/*
+
+# Faster bundling & smaller image
+ENV RAILS_ENV=development \
+    BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=4 \
+    BUNDLE_RETRY=3 \
+    BUNDLE_WITHOUT=""
+
+# Install gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# Copy application code (to be overridden by volume in docker-compose)
+COPY . .
+
+# Ensure permissions
+RUN chown -R 1000:1000 tmp log storage
+
+# Expose ports for the Rails server and Sidekiq
+EXPOSE 3000
+#EXPOSE 6379
+
+# Rails dev server entry
+CMD bash -lc 'rm -f tmp/pids/server.pid && bundle exec rails s -b 0.0.0.0 -p 3000'

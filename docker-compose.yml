@@ -1,0 +1,83 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: >
+      bash -c '
+        rm -f tmp/pids/server.pid &&
+        bundle exec rails db:create &&
+        bundle exec rails db:migrate &&
+        bundle exec rails db:seed &&
+        bundle exec rails s -b 0.0.0.0 -p 3000
+      '
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/default_template_r8_development
+      # - REDIS_CACHE_URL=redis://redis:6379/0
+      # - REDIS_SIDEKIQ_URL=redis://redis:6379/1
+      # - REDIS_CABLE_URL=redis://redis:6379/2
+    volumes:
+      - .:/rails
+      - /rails/tmp
+    depends_on:
+      db:
+        condition: service_healthy
+#      redis:
+#        condition: service_started
+
+#  sidekiq:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile.dev
+#    command: bundle exec sidekiq
+#    environment:
+#      - RAILS_ENV=development
+#      - POSTGRES_HOST=db
+#      - POSTGRES_USER=postgres
+#      - POSTGRES_PASSWORD=postgres
+#      - DATABASE_URL=postgres://postgres:postgres@db:5432/default_template_r8_development
+#      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
+#    volumes:
+#      - .:/rails
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_started
+
+  db:
+    image: postgres:14
+    command: >
+      postgres
+        -c shared_preload_libraries=pg_stat_statements
+        -c pg_stat_statements.track=all
+        -c pg_stat_statements.max=10000
+        -c track_activity_query_size=2048
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: default_template_r8_development
+    ports:
+      - "5433:5432"
+    volumes:
+      - default_template_r8_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d default_template_r8_development"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+#  redis:
+#    image: redis:7
+#    ports:
+#      - "6380:6379"
+
+volumes:
+  default_template_r8_pgdata:
