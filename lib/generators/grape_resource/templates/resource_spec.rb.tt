@@ -45,7 +45,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
 
       it "returns a not found error message" do
         expect(response).to have_http_status(:not_found)
-        expect(response_body).to have_key(:errors)
+        expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end
   end
@@ -61,16 +61,22 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
 
     context "when the request is valid" do
       it "creates a new <%= file_name.singularize %>" do
-        expect { post "/api/<%= version %>/<%= file_name.pluralize %>", params: valid_attributes, headers: headers }.to change(<%= class_name %>, :count).by(1)
+        expect {
+          post "/api/<%= version %>/<%= file_name.pluralize %>", params: valid_attributes, headers: headers
+        }.to change(<%= class_name %>, :count).by(1)
+
         expect(response).to have_http_status(:created)
       end
     end
 
     context "when the request is invalid" do
       it "does not create a new <%= file_name.singularize %> and returns a validation failure message" do
-        expect { post "/api/<%= version %>/<%= file_name.pluralize %>", params: { <%= attributes.first.name %>: nil }, headers: headers }.not_to change(<%= class_name %>, :count)
+        expect {
+          post "/api/<%= version %>/<%= file_name.pluralize %>", params: { <%= attributes.first.name %>: nil }, headers: headers
+        }.not_to change(<%= class_name %>, :count)
+
         expect(response).to have_http_status(:bad_request)
-        expect(response_body).to have_key(:errors)
+        expect(response_body[:errors][:status]).to eq("Bad Request")
       end
     end
   end
@@ -98,8 +104,9 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
     context "when the record does not exist" do
       it "returns a not found error message" do
         put "/api/<%= version %>/<%= file_name.pluralize %>/0", params: valid_attributes, headers: headers
+
         expect(response).to have_http_status(:not_found)
-        expect(response_body).to have_key(:errors)
+        expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end
   end
@@ -107,7 +114,10 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
   describe "DELETE /api/<%= version %>/<%= file_name.pluralize %>/:id" do
     context "when the record exists" do
       it "deletes the <%= file_name.singularize %>" do
-        expect { delete "/api/<%= version %>/<%= file_name.pluralize %>/#{<%= file_name %>_id}", headers: headers }.to change(<%= class_name %>, :count).by(-1)
+        expect {
+          delete "/api/<%= version %>/<%= file_name.pluralize %>/#{<%= file_name %>_id}", headers: headers
+        }.to change(<%= class_name %>, :count).by(-1)
+
         expect(response).to have_http_status(:no_content)
       end
     end
@@ -117,7 +127,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
         delete "/api/<%= version %>/<%= file_name.pluralize %>/0", headers: headers
 
         expect(response).to have_http_status(:not_found)
-        expect(response_body).to have_key(:errors)
+        expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end
   end
