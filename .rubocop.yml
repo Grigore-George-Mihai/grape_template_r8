@@ -8,5 +8,9 @@ AllCops:
   TargetRubyVersion: 3.4
 
 # Custom
+Layout/LineLength:
+  Exclude:
+    - 'app/models/user.rb'
+
 Rails/EnumHash:
   Enabled: false

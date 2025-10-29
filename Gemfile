@@ -7,7 +7,7 @@ gem "kamal", require: false
 gem "pagy"
 gem "pg", "~> 1.1"
 gem "puma", ">= 5.0"
-gem "rails", "~> 8.0.2", ">= 8.0.2.1"
+gem "rails", "~> 8.1.1"
 gem "redis"
 gem "thruster", require: false
 gem "tzinfo-data", platforms: %i[windows jruby]
@@ -35,7 +35,7 @@ gem "solid_queue"
 group :development, :test do
   gem "debug", platforms: %i[mri windows], require: "debug/prelude"
   gem "dotenv-rails"
-  gem "sprockets-rails"
+  gem "propshaft"
 
   # Code Quality & Linting
   gem "rubocop-rails-suite", require: false

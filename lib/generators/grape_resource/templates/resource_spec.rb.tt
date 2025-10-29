@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
 RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, type: :request do
@@ -11,7 +13,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
     before { get "/api/<%= version %>/<%= file_name.pluralize %>", headers: headers }
 
     it "returns a list of <%= file_name.pluralize %>" do
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status :ok
       expect(response_body[:<%= file_name.pluralize %>].size).to eq(3)
     end
 
@@ -32,7 +34,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
       before { get "/api/<%= version %>/<%= file_name.pluralize %>/#{<%= file_name %>_id}", headers: headers }
 
       it "returns the <%= file_name.singularize %>" do
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status :ok
         expect(response_body[:<%= file_name.singularize %>][:id]).to eq(<%= file_name %>_id)
         <%- attributes.each do |attribute| -%>
         expect(response_body[:<%= file_name.singularize %>][:<%= attribute.name %>]).to eq(<%= file_name %>.<%= attribute.name %>)
@@ -44,7 +46,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
       before { get "/api/<%= version %>/<%= file_name.pluralize %>/0", headers: headers }
 
       it "returns a not found error message" do
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status :not_found
         expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end
@@ -65,7 +67,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
           post "/api/<%= version %>/<%= file_name.pluralize %>", params: valid_attributes, headers: headers
         }.to change(<%= class_name %>, :count).by(1)
 
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status :created
       end
     end
 
@@ -75,7 +77,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
           post "/api/<%= version %>/<%= file_name.pluralize %>", params: { <%= attributes.first.name %>: nil }, headers: headers
         }.not_to change(<%= class_name %>, :count)
 
-        expect(response).to have_http_status(:bad_request)
+        expect(response).to have_http_status :bad_request
         expect(response_body[:errors][:status]).to eq("Bad Request")
       end
     end
@@ -94,7 +96,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
       it "updates the record" do
         put "/api/<%= version %>/<%= file_name.pluralize %>/#{<%= file_name %>_id}", params: valid_attributes, headers: headers
 
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status :ok
         <%- attributes.each do |attribute| -%>
         expect(<%= file_name %>.reload.<%= attribute.name %>).to eq(valid_attributes[:<%= attribute.name %>])
         <%- end -%>
@@ -105,7 +107,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
       it "returns a not found error message" do
         put "/api/<%= version %>/<%= file_name.pluralize %>/0", params: valid_attributes, headers: headers
 
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status :not_found
         expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end
@@ -118,7 +120,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
           delete "/api/<%= version %>/<%= file_name.pluralize %>/#{<%= file_name %>_id}", headers: headers
         }.to change(<%= class_name %>, :count).by(-1)
 
-        expect(response).to have_http_status(:no_content)
+        expect(response).to have_http_status :no_content
       end
     end
 
@@ -126,7 +128,7 @@ RSpec.describe <%= version.camelize %>::Resources::<%= class_name.pluralize %>, 
       it "returns a not found error message" do
         delete "/api/<%= version %>/<%= file_name.pluralize %>/0", headers: headers
 
-        expect(response).to have_http_status(:not_found)
+        expect(response).to have_http_status :not_found
         expect(response_body[:errors][:status]).to eq("Not Found")
       end
     end

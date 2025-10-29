@@ -19,40 +19,40 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-      # - REDIS_CACHE_URL=redis://redis:6379/0
-      # - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-      # - REDIS_CABLE_URL=redis://redis:6379/2
+      - REDIS_CACHE_URL=redis://redis:6379/0
+      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
+      - REDIS_CABLE_URL=redis://redis:6379/2
     volumes:
       - .:/rails
       - /rails/tmp
     depends_on:
       db:
         condition: service_healthy
-#      redis:
-#        condition: service_started
+      redis:
+        condition: service_started
 
-#  sidekiq:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile.dev
-#    command: bundle exec sidekiq
-#    environment:
-#      - RAILS_ENV=development
-#      - POSTGRES_HOST=db
-#      - POSTGRES_USER=postgres
-#      - POSTGRES_PASSWORD=postgres
-#      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-#      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-#    volumes:
-#      - .:/rails
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#      redis:
-#        condition: service_started
+  sidekiq:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bundle exec sidekiq
+    environment:
+      - RAILS_ENV=development
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
+      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
+    volumes:
+      - .:/rails
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   db:
-    image: postgres:14
+    image: postgres:16
     command: >
       postgres
         -c shared_preload_libraries=pg_stat_statements
@@ -74,10 +74,10 @@ services:
       retries: 20
       start_period: 5s
 
-#  redis:
-#    image: redis:7
-#    ports:
-#      - "6380:6379"
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
 
 volumes:
   grape_template_r8_pgdata:

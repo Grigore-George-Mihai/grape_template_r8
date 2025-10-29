@@ -27,7 +27,7 @@ RSpec.describe V1::Resources::Auth, type: :request do
     context "when the request is valid" do
       it "creates a new user and returns the user data" do
         post "/api/v1/auth/signup", params: valid_params
-        expect(response).to have_http_status(:created)
+        expect(response).to have_http_status :created
         expect(response_body[:user][:email]).to eq(valid_params[:email])
         expect(response_body[:user][:first_name]).to eq(valid_params[:first_name])
         expect(response_body[:user][:last_name]).to eq(valid_params[:last_name])
@@ -37,7 +37,7 @@ RSpec.describe V1::Resources::Auth, type: :request do
     context "when the request is invalid" do
       it "returns a validation error" do
         post "/api/v1/auth/signup", params: invalid_params
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status :unprocessable_content
         expect(response_body[:error]).to include("Password confirmation doesn't match Password")
       end
     end
@@ -63,7 +63,7 @@ RSpec.describe V1::Resources::Auth, type: :request do
     context "when the login credentials are valid" do
       it "returns a JWT token and user data" do
         post "/api/v1/auth/login", params: valid_login_params
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status :ok
         expect(response_body[:token]).not_to be_nil
         expect(response_body[:user][:email]).to eq(user.email)
         expect(response_body[:user][:first_name]).to eq(user.first_name)
@@ -74,7 +74,7 @@ RSpec.describe V1::Resources::Auth, type: :request do
     context "when the login credentials are invalid" do
       it "returns an unauthorized error" do
         post "/api/v1/auth/login", params: invalid_login_params
-        expect(response).to have_http_status(:unauthorized)
+        expect(response).to have_http_status :unauthorized
         expect(response_body[:error]).to eq("Invalid email or password")
       end
     end
@@ -97,7 +97,7 @@ RSpec.describe V1::Resources::Auth, type: :request do
 
         delete "/api/v1/auth/logout", headers: { "Authorization" => "Bearer #{token}" }
 
-        expect(response).to have_http_status(:ok)
+        expect(response).to have_http_status :ok
         expect(response_body[:message]).to eq("Logged out successfully")
       end
     end
