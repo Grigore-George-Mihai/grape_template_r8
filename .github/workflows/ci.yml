@@ -53,6 +53,11 @@ jobs:
   rspec:
     runs-on: ubuntu-latest
 
+    env:
+      RAILS_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432
+      JWT_SECRET: test_jwt_secret_for_ci
+
     services:
       postgres:
         image: postgres:16
@@ -64,7 +69,7 @@ jobs:
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
 
       # redis:
-      #   image: valkey/valkey:8
+      #   image: redis:7-alpine
       #   ports:
       #     - 6379:6379
       #   options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
@@ -82,16 +87,7 @@ jobs:
           bundler-cache: true
 
       - name: Setup Database
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
         run: bin/rails db:setup
 
       - name: Run RSpec tests
-        env:
-          RAILS_ENV: test
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432
-          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_jwt_secret' }}
-          # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
-          # REDIS_URL: redis://localhost:6379/0
         run: bundle exec rspec
