@@ -13,8 +13,9 @@ module ErrorHandler
       error!({ errors: { status: I18n.t("errors.status.not_found") } }, 404)
     end
 
-    rescue_from ActiveRecord::RecordInvalid do
-      error!({ errors: { status: I18n.t("errors.status.unprocessable_entity") } }, 422)
+    rescue_from ActiveRecord::RecordInvalid do |exception|
+      messages = exception.record.errors.full_messages
+      error!({ errors: { status: I18n.t("errors.status.unprocessable_entity"), messages: } }, 422)
     end
 
     # Grape validation errors
@@ -38,7 +39,9 @@ module ErrorHandler
     # Catch-all for unexpected errors
     rescue_from :all do |e|
       Rollbar.error(e) if defined?(Rollbar)
-      error!({ errors: { status: I18n.t("errors.status.internal_server_error"), message: e.message } }, 500)
+      payload = { errors: { status: I18n.t("errors.status.internal_server_error") } }
+      payload[:errors][:message] = e.message if Rails.env.development?
+      error!(payload, 500)
     end
   end
 end

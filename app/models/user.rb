@@ -14,6 +14,6 @@ class User < ApplicationRecord
   validates :password, length: { minimum: 6 }, format: { with: /\A(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]+\z/, message: I18n.t("errors.messages.password_complexity") }
 
   def regenerate_jti!
-    update_column(:jti, SecureRandom.uuid)
+    update_columns(jti: SecureRandom.uuid, updated_at: Time.current)
   end
 end

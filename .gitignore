@@ -63,3 +63,9 @@ Thumbs.db
 
 # Ignore Docker-related cache files (if any)
 .docker/
+
+# LLM / AI tools
+.claude/
+CLAUDE.md
+.cursor/
+.copilot/

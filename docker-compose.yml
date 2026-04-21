@@ -29,8 +29,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
-
+        condition: service_healthy
   sidekiq:
     build:
       context: .
@@ -49,8 +48,7 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
-
+        condition: service_healthy
   db:
     image: postgres:16
     command: >
@@ -73,11 +71,15 @@ services:
       timeout: 3s
       retries: 20
       start_period: 5s
-
   redis:
     image: redis:7
     ports:
       - "6380:6379"
-
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 volumes:
   grape_template_r8_pgdata:

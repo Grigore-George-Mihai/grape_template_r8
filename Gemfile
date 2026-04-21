@@ -5,7 +5,7 @@ gem "bootsnap", require: false
 gem "jwt"
 gem "kamal", require: false
 gem "pagy"
-gem "pg", "~> 1.1"
+gem "pg", "~> 1.5"
 gem "puma", ">= 5.0"
 gem "rails", "~> 8.1.1"
 gem "redis"

@@ -91,14 +91,21 @@ RSpec.describe V1::Resources::Auth, type: :request do
     end
 
     context "when the user is logged in and requests logout" do
-      it "logs out the user and invalidates the JWT token" do
+      let(:auth_header) do
         post "/api/v1/auth/login", params: valid_login_params
-        token = response_body[:token]
+        { "Authorization" => "Bearer #{response_body[:token]}" }
+      end
 
-        delete "/api/v1/auth/logout", headers: { "Authorization" => "Bearer #{token}" }
-
+      it "logs out the user" do
+        delete "/api/v1/auth/logout", headers: auth_header
         expect(response).to have_http_status :ok
         expect(response_body[:message]).to eq("Logged out successfully")
+      end
+
+      it "invalidates the JWT token" do
+        delete "/api/v1/auth/logout", headers: auth_header
+        delete "/api/v1/auth/logout", headers: auth_header
+        expect(response).to have_http_status :unauthorized
       end
     end
   end
