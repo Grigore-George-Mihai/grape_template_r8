@@ -1,54 +1,43 @@
+# Shared by the web and sidekiq services: one Dockerfile.dev image (built by web), the code mounted, the same DB/Redis.
+# `<<:` merges shallowly, so a service that sets its own `volumes`/`environment` replaces these (web re-merges env).
+x-app: &app
+  image: grape_template_r8-dev
+  volumes:
+    - .:/rails
+  environment: &app_env
+    RAILS_ENV: development
+    DATABASE_URL: postgres://postgres:postgres@db:5432/grape_template_r8_development
+    REDIS_SIDEKIQ_URL: redis://redis:6379/1
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
 services:
   web:
+    <<: *app
     build:
       context: .
       dockerfile: Dockerfile.dev
     command: >
       bash -c '
         rm -f tmp/pids/server.pid &&
-        bundle exec rails db:create &&
-        bundle exec rails db:migrate &&
-        bundle exec rails db:seed &&
+        bundle exec rails db:prepare &&
         bundle exec rails s -b 0.0.0.0 -p 3000
       '
     ports:
       - "3000:3000"
     environment:
-      - RAILS_ENV=development
-      - POSTGRES_HOST=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-      - REDIS_CACHE_URL=redis://redis:6379/0
-      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-      - REDIS_CABLE_URL=redis://redis:6379/2
+      <<: *app_env
+      REDIS_CACHE_URL: redis://redis:6379/0
+      REDIS_CABLE_URL: redis://redis:6379/2
     volumes:
       - .:/rails
       - /rails/tmp
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
   sidekiq:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
+    <<: *app
     command: bundle exec sidekiq
-    environment:
-      - RAILS_ENV=development
-      - POSTGRES_HOST=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-    volumes:
-      - .:/rails
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
   db:
     image: postgres:16
     command: >

@@ -32,6 +32,11 @@ RSpec.describe V1::Resources::Auth, type: :request do
         expect(response_body[:user][:first_name]).to eq(valid_params[:first_name])
         expect(response_body[:user][:last_name]).to eq(valid_params[:last_name])
       end
+
+      it "ignores a role param and creates a regular user" do
+        post "/api/v1/auth/signup", params: valid_params.merge(role: "admin")
+        expect(User.find_by(email: valid_params[:email])).to be_user
+      end
     end
 
     context "when the request is invalid" do

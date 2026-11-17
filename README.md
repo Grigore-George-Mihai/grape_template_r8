@@ -11,6 +11,7 @@ This repository serves as a default template for a Ruby on Rails (RoR) applicati
   - [Usage](#usage)
   - [Features](#features)
   - [Example](#example)
+- [Background Jobs](#background-jobs)
 - [Docker Setup](#docker-setup)
 - [Contact](#contact)
 
@@ -76,6 +77,7 @@ bin/rails db:seed      # Loads seed data
 - [Sidekiq](https://github.com/mperham/sidekiq): Efficient background processing for Ruby applications.
 - [Sidekiq-Scheduler](https://github.com/moove-it/sidekiq-scheduler): Extends Sidekiq to support scheduled and recurring jobs using a simple configuration.
 - [Redis](https://github.com/redis/redis-rb): In-memory data structure store used by Sidekiq for managing background job queues, scheduling, and retries.
+- [Solid Queue](https://github.com/rails/solid_queue): Database-backed Active Job backend, installed but opt-in. See [Switching to Solid Queue](#switching-to-solid-queue).
 
 **Performance Monitoring**
 - [Scout APM](https://github.com/scoutapp/scout_apm_ruby): Application monitoring tool.
@@ -134,6 +136,42 @@ rails generate grape_resource Book title:string description:text
 - The resource will be automatically mounted in the API
 - The entity will be added to Swagger documentation
 - The generator also gives you the option to create the User model with the specified attributes.
+
+---
+
+### Background Jobs
+**Sidekiq is the default** in every environment except test (which uses the in-memory `:test` adapter).
+
+- Sidekiq-native jobs `include Sidekiq::Job` (put them in `app/sidekiq/`); recurring ones are scheduled in `config/scheduler/<env>.yml` (sidekiq-scheduler).
+- Active Job (`deliver_later`, `ApplicationJob` subclasses, Active Storage) is also routed to Sidekiq. Mail goes to the `mailers` queue.
+- Run a worker locally with `bin/dev` (Procfile.dev starts `bundle exec sidekiq`) or `docker-compose up`.
+- In production, Kamal runs Sidekiq as the `job` role and Redis as the `redis` accessory (`config/deploy.yml`). Boot the accessory once with `bin/kamal accessory boot redis`.
+
+#### Switching to Solid Queue
+Solid Queue is installed but dormant. To route **Active Job** through it instead of Sidekiq:
+
+1. In each `config/environments/<env>.rb` that should use it (e.g. `production.rb`), add:
+   ```ruby
+   config.active_job.queue_adapter = :solid_queue
+   config.solid_queue.connects_to = { database: { writing: :queue } }
+   ```
+   Keep `connects_to` out of `config/application.rb`: every environment that loads it needs a `queue` database, including test, which CI eager-loads.
+2. Make sure that environment has a `queue` database. Production already defines one in `config/database.yml`; for development add the same structure:
+   ```yaml
+   development:
+     primary:
+       <<: *default
+       database: grape_template_r8_development
+     queue:
+       <<: *default
+       database: grape_template_r8_development_queue
+       migrations_paths: db/queue_migrate
+   ```
+   then run `bin/rails db:prepare` (loads `db/queue_schema.rb`).
+3. Run the supervisor: `bin/jobs` as its own process/Kamal role, or `SOLID_QUEUE_IN_PUMA=true` to run it inside Puma.
+4. Define recurring Active Job tasks in `config/recurring.yml`.
+
+> **Limitation:** the adapter only affects Active Job. `Sidekiq::Job` classes and the sidekiq-scheduler schedule always need Redis and a Sidekiq process. To drop Sidekiq entirely, rewrite those jobs as `ApplicationJob` subclasses and move their schedule to `config/recurring.yml`.
 
 ---
 

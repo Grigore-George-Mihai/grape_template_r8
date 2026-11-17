@@ -22,18 +22,20 @@ namespace :setup do
       [/\b#{Regexp.escape(old_title)}\b/, new_title],
 
       # CamelCase
-      [/\b#{Regexp.escape(old_title_camel)}\b/, new_title_camel],
       [/#{Regexp.escape(old_title_camel)}/, new_title_camel],
 
       # snake_case
-      [/\b#{Regexp.escape(old_title_snake)}\b/, new_title_snake],
-      [/#{Regexp.escape(old_title_snake)}/, new_title_snake]
+      [/#{Regexp.escape(old_title_snake)}/, new_title_snake],
+
+      # SCREAMING_SNAKE_CASE (env var names, e.g. APP_DATABASE_PASSWORD)
+      [/#{Regexp.escape(old_title_snake.upcase)}/, new_title_snake.upcase]
     ]
+    rename = ->(line) { replace_patterns.reduce(line) { |acc, (from, to)| acc.gsub(from, to) } }
 
     files = %w[
       .ruby-gemset
+      .kamal/secrets
       .env.development.template
-      app/views/pwa/manifest.json.erb
       config/application.rb
       config/cable.yml
       config/database.yml
@@ -43,6 +45,7 @@ namespace :setup do
       config/deploy.yml
       docker-compose.yml
       Dockerfile
+      README.md
     ]
 
     changed = 0
@@ -51,7 +54,8 @@ namespace :setup do
       next unless File.exist?(path)
 
       text = File.read(path)
-      updated = replace_patterns.reduce(text) { |acc, (from, to)| acc.gsub(from, to) }
+      # Leave GitHub URLs alone (e.g. the README clone URL points at this template's repo, not the new app).
+      updated = text.each_line.map { |line| line.include?("github.com/") ? line : rename.call(line) }.join
       next if updated == text
 
       File.write(path, updated)

@@ -1,6 +1,6 @@
 common: &defaults
   monitor: <%= ENV["SCOUT_KEY"].present? %>
-  log_level: debug
+  log_level: info
   key: <%= ENV["SCOUT_KEY"].presence %>
   name: <%= ENV["SCOUT_NAME"].presence || "GrapeTemplateR8" %>
 
@@ -9,7 +9,6 @@ production:
 
 development:
   <<: *defaults
-  monitor: true
 
 test:
   <<: *defaults

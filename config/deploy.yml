@@ -8,7 +8,14 @@ image: grape_template_r8
 servers:
   web:
     - 192.168.0.1
-  # job:
+  # Sidekiq worker (processes app/sidekiq jobs, sidekiq-scheduler and Active Job).
+  job:
+    hosts:
+      - 192.168.0.1
+    cmd: bundle exec sidekiq
+  # If you switch Active Job to Solid Queue (config/application.rb, see README), run its supervisor in a role like this,
+  # or set SOLID_QUEUE_IN_PUMA below to run it inside the web process:
+  # solid_queue:
   #   hosts:
   #     - 192.168.0.1
   #   cmd: bin/jobs
@@ -38,12 +45,22 @@ registry:
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 env:
+  # Needed by both roles: JwtService raises at boot without JWT_SECRET, and /sidekiq auth reads the SIDEKIQ_* values.
   secret:
     - RAILS_MASTER_KEY
+    - JWT_SECRET
+    - GRAPE_TEMPLATE_R8_DATABASE_PASSWORD
+    - SIDEKIQ_USERNAME
+    - SIDEKIQ_PASSWORD
+    - SIDEKIQ_SESSION_KEY
   clear:
-    # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
-    # When you start using multiple servers, you should split out job processing to a dedicated machine.
-    SOLID_QUEUE_IN_PUMA: true
+    # Sidekiq connects to the redis accessory over the Kamal docker network (container: <service>-redis).
+    REDIS_SIDEKIQ_URL: redis://grape_template_r8-redis:6379/1
+    # SIDEKIQ_CONCURRENCY: 5 # default from config/initializers/sidekiq.rb
+
+    # --- Solid Queue (opt-in, see README "Switching to Solid Queue") ---
+    # Run the Solid Queue supervisor inside the web server's Puma process (single-server setups).
+    # SOLID_QUEUE_IN_PUMA: true
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
@@ -81,7 +98,7 @@ builder:
   #
   # # Pass arguments and secrets to the Docker build process
   # args:
-  #   RUBY_VERSION: ruby-3.4.4
+  #   RUBY_VERSION: ruby-3.4.12
   # secrets:
   #   - GITHUB_TOKEN
   #   - RAILS_MASTER_KEY
@@ -91,7 +108,15 @@ builder:
 #   user: app
 
 # Use accessory services (secrets come from .kamal/secrets).
-# accessories:
+accessories:
+  # Redis for Sidekiq. No published port: app containers reach it over the Kamal docker network.
+  redis:
+    image: redis:7
+    host: 192.168.0.1
+    cmd: redis-server --appendonly yes
+    directories:
+      - data:/data
+# Other accessories, e.g. a database:
 #   db:
 #     image: mysql:8.0
 #     host: 192.168.0.2
@@ -107,9 +132,3 @@ builder:
 #       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
 #     directories:
 #       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data

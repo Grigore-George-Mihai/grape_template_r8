@@ -3,7 +3,7 @@
 class User < ApplicationRecord
   has_secure_password
 
-  enum :role, %i[user admin], validate: true
+  enum :role, { user: 0, admin: 1 }, validate: true
 
   before_create -> { self.jti ||= SecureRandom.uuid }
 
