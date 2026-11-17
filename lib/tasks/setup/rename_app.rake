@@ -30,9 +30,11 @@ namespace :setup do
       # SCREAMING_SNAKE_CASE (env var names, e.g. APP_DATABASE_PASSWORD)
       [/#{Regexp.escape(old_title_snake.upcase)}/, new_title_snake.upcase]
     ]
+    rename = ->(line) { replace_patterns.reduce(line) { |acc, (from, to)| acc.gsub(from, to) } }
 
     files = %w[
       .ruby-gemset
+      .kamal/secrets
       .env.development.template
       config/application.rb
       config/cable.yml
@@ -52,7 +54,8 @@ namespace :setup do
       next unless File.exist?(path)
 
       text = File.read(path)
-      updated = replace_patterns.reduce(text) { |acc, (from, to)| acc.gsub(from, to) }
+      # Leave GitHub URLs alone (e.g. the README clone URL points at this template's repo, not the new app).
+      updated = text.each_line.map { |line| line.include?("github.com/") ? line : rename.call(line) }.join
       next if updated == text
 
       File.write(path, updated)

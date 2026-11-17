@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-bin/setup            # Install deps, prepare and reset DB, start dev server
+bin/setup            # Install deps, copy env files, prepare DB, start dev server (--reset also resets the DB)
 bin/dev              # Start development server only
 bin/ci               # Full CI pipeline (rubocop → bundler-audit → brakeman → rspec)
 bin/rubocop          # Lint
@@ -53,7 +53,7 @@ This creates the resource file, entity, spec, and auto-mounts the resource in `a
 
 ### Background Jobs
 
-Sidekiq with Redis. Queues: `critical`, `default`, `mailers`, `maintenance` (defined in `config/initializers/sidekiq.rb`). Scheduler loads `config/scheduler/#{Rails.env}.yml` on Sidekiq startup (directory is created on demand).
+Sidekiq with Redis. Queues: `critical`, `default`, `mailers`, `maintenance` (defined in `config/initializers/sidekiq.rb`). Scheduler loads `config/scheduler/#{Rails.env}.yml` on Sidekiq startup, if that file exists (the directory only has a `.keep` for now).
 
 Active Job also runs on Sidekiq (`:test` adapter in tests). Solid Queue is opt-in — see README "Background Jobs" for the deploy setup and how to switch.
 

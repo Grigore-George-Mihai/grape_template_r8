@@ -1,9 +1,6 @@
-# Shared by the web and sidekiq services: one Dockerfile.dev image, the code mounted, the same DB/Redis.
+# Shared by the web and sidekiq services: one Dockerfile.dev image (built by web), the code mounted, the same DB/Redis.
 # `<<:` merges shallowly, so a service that sets its own `volumes`/`environment` replaces these (web re-merges env).
 x-app: &app
-  build:
-    context: .
-    dockerfile: Dockerfile.dev
   image: grape_template_r8-dev
   volumes:
     - .:/rails
@@ -20,6 +17,9 @@ x-app: &app
 services:
   web:
     <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     command: >
       bash -c '
         rm -f tmp/pids/server.pid &&
