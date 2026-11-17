@@ -11,7 +11,7 @@ bin/ci               # Full CI pipeline (rubocop → bundler-audit → brakeman 
 bin/rubocop          # Lint
 bin/brakeman         # Security static analysis
 bin/bundler-audit    # Gem vulnerability scan
-bin/jobs             # Start Sidekiq worker
+bundle exec sidekiq  # Start Sidekiq worker (bin/jobs is the opt-in Solid Queue supervisor)
 bundle exec rspec                              # Run all tests
 bundle exec rspec spec/path/to/file_spec.rb   # Run single file
 bundle exec rspec spec/path/to/file_spec.rb:5 # Run single example
@@ -55,7 +55,7 @@ This creates the resource file, entity, spec, and auto-mounts the resource in `a
 
 Sidekiq with Redis. Queues: `critical`, `default`, `mailers`, `maintenance` (defined in `config/initializers/sidekiq.rb`). Scheduler loads `config/scheduler/#{Rails.env}.yml` on Sidekiq startup (directory is created on demand).
 
-Active Job is routed to Sidekiq (`config.active_job.queue_adapter = :sidekiq` in `config/application.rb`), overridden to `:test` in `config/environments/test.rb`; `deliver_later` mail goes to the `mailers` queue. Solid Queue is installed but opt-in (commented lines in `config/application.rb`; see README "Switching to Solid Queue"). Production Kamal runs Sidekiq as the `job` role with a `redis` accessory.
+Active Job also runs on Sidekiq (`:test` adapter in tests). Solid Queue is opt-in — see README "Background Jobs" for the deploy setup and how to switch.
 
 ### Testing
 
@@ -64,7 +64,7 @@ RSpec only (no `test/` dir, no fixtures — FactoryBot). `spec/rails_helper.rb` 
 ### Conventions
 
 - Use hash enums (`{ user: 0, admin: 1 }`) so reordering values can't change stored integers.
-- Frozen string literals at the top of every `.rb` file.
+- Frozen string literals at the top of `.rb` files in `app/`, `lib/` and `spec/` (RuboCop enforces it there; `rubocop-rails-suite` excludes `config/`).
 - `bin/rails setup:copy_env` (run by `bin/setup`) deliberately has no `:environment` dependency, because booting requires `JWT_SECRET` from the file it creates.
 
 ### Key Environment Variables

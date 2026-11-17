@@ -1,10 +1,21 @@
-# Shared by the web and sidekiq services (both run the Dockerfile.dev image with the code mounted).
+# Shared by the web and sidekiq services: one Dockerfile.dev image, the code mounted, the same DB/Redis.
+# `<<:` merges shallowly, so a service that sets its own `volumes`/`environment` replaces these (web re-merges env).
 x-app: &app
   build:
     context: .
     dockerfile: Dockerfile.dev
+  image: grape_template_r8-dev
   volumes:
     - .:/rails
+  environment: &app_env
+    RAILS_ENV: development
+    DATABASE_URL: postgres://postgres:postgres@db:5432/grape_template_r8_development
+    REDIS_SIDEKIQ_URL: redis://redis:6379/1
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
 
 services:
   web:
@@ -18,31 +29,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - RAILS_ENV=development
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-      - REDIS_CACHE_URL=redis://redis:6379/0
-      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-      - REDIS_CABLE_URL=redis://redis:6379/2
+      <<: *app_env
+      REDIS_CACHE_URL: redis://redis:6379/0
+      REDIS_CABLE_URL: redis://redis:6379/2
     volumes:
       - .:/rails
       - /rails/tmp
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
   sidekiq:
     <<: *app
     command: bundle exec sidekiq
-    environment:
-      - RAILS_ENV=development
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/grape_template_r8_development
-      - REDIS_SIDEKIQ_URL=redis://redis:6379/1
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
   db:
     image: postgres:16
     command: >
