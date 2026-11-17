@@ -11,6 +11,3 @@ AllCops:
 Layout/LineLength:
   Exclude:
     - 'app/models/user.rb'
-
-Rails/EnumHash:
-  Enabled: false

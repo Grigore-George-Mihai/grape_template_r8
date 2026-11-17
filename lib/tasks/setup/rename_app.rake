@@ -22,18 +22,18 @@ namespace :setup do
       [/\b#{Regexp.escape(old_title)}\b/, new_title],
 
       # CamelCase
-      [/\b#{Regexp.escape(old_title_camel)}\b/, new_title_camel],
       [/#{Regexp.escape(old_title_camel)}/, new_title_camel],
 
       # snake_case
-      [/\b#{Regexp.escape(old_title_snake)}\b/, new_title_snake],
-      [/#{Regexp.escape(old_title_snake)}/, new_title_snake]
+      [/#{Regexp.escape(old_title_snake)}/, new_title_snake],
+
+      # SCREAMING_SNAKE_CASE (env var names, e.g. APP_DATABASE_PASSWORD)
+      [/#{Regexp.escape(old_title_snake.upcase)}/, new_title_snake.upcase]
     ]
 
     files = %w[
       .ruby-gemset
       .env.development.template
-      app/views/pwa/manifest.json.erb
       config/application.rb
       config/cable.yml
       config/database.yml
@@ -43,6 +43,7 @@ namespace :setup do
       config/deploy.yml
       docker-compose.yml
       Dockerfile
+      README.md
     ]
 
     changed = 0

@@ -86,8 +86,9 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Setup Database
-        run: bin/rails db:setup
+      # db:test:prepare loads the schema without seeding (db:setup/db:prepare would seed the test DB).
+      - name: Prepare database
+        run: bin/rails db:test:prepare
 
       - name: Run RSpec tests
         run: bundle exec rspec
